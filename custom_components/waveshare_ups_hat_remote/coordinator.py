@@ -58,6 +58,7 @@ class RemoteUpsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not isinstance(payload, dict):
             return
         self._last = time.monotonic()
+        self._online = True
         self.async_set_updated_data(payload)
 
     @callback
@@ -67,9 +68,9 @@ class RemoteUpsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_update_error(UpdateFailed("agent offline"))
 
     async def _async_update_data(self) -> dict[str, Any]:
-        if not self._online and self._last == 0:
+        if self._last == 0:
             raise UpdateFailed("waiting for agent")
-        if self._last and time.monotonic() - self._last > STALE_SECONDS:
+        if time.monotonic() - self._last > STALE_SECONDS:
             raise UpdateFailed("snapshot stale")
         if not self._online:
             raise UpdateFailed("agent offline")
